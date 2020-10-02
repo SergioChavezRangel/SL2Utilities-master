@@ -1,0 +1,3 @@
+
+02/Oct/2020 15:56:08 Fri. setDecFilePath: C:\Users\Administrator\Google Drive\Projects\Pyton\SL2Utilities-master\srcDecrypted.xml
+02/Oct/2020 15:56:08 Fri. setEncFilePath: C:\Users\Administrator\Google Drive\Projects\Pyton\SL2Utilities-master\srcencDecrypted.xml

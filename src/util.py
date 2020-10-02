@@ -20,7 +20,7 @@ import schrAutomationL2.configdatareader as cryptlib
 BASE_FILE = os.path.basename(sys.argv[0])
 BASE_PATH = os.getcwd()
 FULL_PATH_FILE = os.getcwd() + '\\' + BASE_FILE
-logger.setPath(BASE_PATH + '\\log')
+logger.setPath(BASE_PATH)
 logger.setFileName(BASE_FILE)
 
 def _test():
@@ -33,8 +33,8 @@ def _test():
         DecFile = input('Decoded ProjectFile Name(./):')
         key = cryptlib.get_key(KeyPassword.encode())
         cryptlib.set_key(key)
-        cryptlib.setDecFilePath(BASE_PATH + DecFile, True)
-        cryptlib.setEncFilePath(BASE_PATH + DecFile, True)
+        cryptlib.setDecFilePath(BASE_PATH + '\\' + DecFile, True)
+        cryptlib.setEncFilePath(BASE_PATH + '\\' + 'enc' + DecFile, True)
         cryptlib.encodeXML(False)
 
     if option in (2, 3):
