@@ -24,43 +24,46 @@ logger.setPath(BASE_PATH)
 logger.setFileName(BASE_FILE)
 
 def _test():
-    print('OPTIONS: \n1. Encode Settings (File->File)\n2. Decode Settings (File->File)')
-    print('3. Decode Settings (File->Memory)\n4. Get Token from Date\n5. Get Expiredate from Token')
-    option = int(input('Choose what to do??:'))
-    if option == 1:
-        KeyPassword = input('Personal KeyPassword:')
-        print('BASE_PATH: ' + BASE_PATH)
-        DecFile = input('Decoded ProjectFile Name(./):')
-        key = cryptlib.get_key(KeyPassword.encode())
-        cryptlib.set_key(key)
-        cryptlib.setDecFilePath(BASE_PATH + '\\' + DecFile, True)
-        cryptlib.setEncFilePath(BASE_PATH + '\\' + 'enc' + DecFile, True)
-        cryptlib.encodeXML(False)
+    option = -1
+    while option != 0:
+        os.system('cls')
+        print('OPTIONS: \n1. Encode Settings (File->File)\n2. Decode Settings (File->File)')
+        print('3. Decode Settings (File->Memory)\n4. Get Token from Date\n5. Get Expiredate from Token')
+        option = int(input('Choose what to do??:'))
+        if option == 1:
+            KeyPassword = input('Personal KeyPassword:')
+            print('BASE_PATH: ' + BASE_PATH)
+            DecFile = input('Decoded ProjectFile Name(./):')
+            key = cryptlib.get_key(KeyPassword.encode())
+            cryptlib.set_key(key)
+            cryptlib.setDecFilePath(BASE_PATH + '\\' + DecFile, True)
+            cryptlib.setEncFilePath(BASE_PATH + '\\' + 'enc' + DecFile, True)
+            cryptlib.encodeXML(False)
 
-    if option in (2, 3):
-        print('BASE_PATH: ' + BASE_PATH)
-        EncFile = input('Encoded ProjectFile Name(./):')
-        cryptlib.setDecFilePath(BASE_PATH + EncFile, True)
-        cryptlib.setEncFilePath(BASE_PATH + EncFile, True)
-        createFile = False
-        if option == 2:
-            createFile = True
-        Config = (cryptlib.decodeXML(createFile, False))
-        print(Config)
-        Key = cryptlib.isValidKey(Config["Token"])
-        print('TokenValid: ' + str(Key))
-        print('Config.ExpireDate: ' + cryptlib.getExpireDate(Config["Token"]))
+        if option in (2, 3):
+            print('BASE_PATH: ' + BASE_PATH)
+            EncFile = input('Encoded ProjectFile Name(./):')
+            cryptlib.setDecFilePath(BASE_PATH + '\\' + EncFile, True)
+            cryptlib.setEncFilePath(BASE_PATH + '\\' + EncFile, True)
+            createFile = False
+            if option == 2:
+                createFile = True
+            Config = (cryptlib.decodeXML(createFile, False))
+            print(Config)
+            Key = cryptlib.isValidKey(Config["Token"])
+            print('TokenValid: ' + str(Key))
+            print('Config.ExpireDate: ' + cryptlib.getExpireDate(Config["Token"]))
 
-    if option == 4:
-        date = input('Date (YYYY-MM-DD):')
-        yyyy = int(date[:4])
-        mm = int(date[5:-3])
-        dd = int(date[-2:])
-        print('TokenDate: ' + str(cryptlib.getTokenDate(datetime.date(yyyy, mm, dd))))
+        if option == 4:
+            date = input('Date (YYYY-MM-DD):')
+            yyyy = int(date[:4])
+            mm = int(date[5:-3])
+            dd = int(date[-2:])
+            print('TokenDate: ' + str(cryptlib.getTokenDate(datetime.date(yyyy, mm, dd))))
 
-    if option == 5:
-        tk = input('Token to validate:')
-        print('ExpireDate: ' + cryptlib.getExpireDate(tk))
+        if option == 5:
+            tk = input('Token to validate:')
+            print('ExpireDate: ' + cryptlib.getExpireDate(tk))
 
     logger.purger()
     
