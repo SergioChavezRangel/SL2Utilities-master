@@ -28,6 +28,8 @@ This project is part of the common L2System packages for automation.
 
 Windows:
 
+Download file ``_./dist/sl2util-1.0.0.tar.gz_`` and unzip the file.
+On ``cmd`` get to the root of unzipped dir and run:
 ```sh
 python setup.py install
 ```
@@ -35,16 +37,8 @@ python setup.py install
 ## Usage example
 
 To read a xml config file and crypt.
-```sh
-python util.py
-```
 
 _For more examples and usage, please refer to the [Docs][Docs]._
-
-## Development setup
-
-Just download the project locally and run the test at ``./tests``.
-
 ```python
 import sl2util.configdatareader as cryptlib
 # Get Basic Info
@@ -59,6 +53,13 @@ cryptlib.setDecFilePath(BASE_PATH + '\\' + DecFile, True)
 cryptlib.setEncFilePath(BASE_PATH + '\\' + 'enc' + DecFile, True)
 # Make the xml ProjectFile encoded
 cryptlib.encodeXML(False)
+```
+## Development setup
+
+Just download the project locally and run the test at ``./tests``.
+
+```sh
+python util.py
 ```
 
 ## Release History
