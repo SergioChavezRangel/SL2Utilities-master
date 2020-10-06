@@ -2,4 +2,5 @@
 setup.py
 sl2util\__init__.py
 sl2util\configdatareader.py
+sl2util\dbhandler.py
 sl2util\logger.py
