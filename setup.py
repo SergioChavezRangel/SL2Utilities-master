@@ -1,14 +1,15 @@
-from setuptools import setup
+from distutils.core import setup
+
 
 setup(
-    name='SL2Utilities-master',
+    name='sl2util',
     version='1.0.0',
-    packages=[''],
+    packages=[],
     url='',
-    license='CC BY-NC-SA 4.0',
+    license='MIT License',
     author='SergioChavez',
     author_email='l2.steel.automation@gmail.com',
     description='Steelmaking Automation Utils',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
     py_modules=['logger', 'configdatareader', ],
 )

@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<root>
-    <Token value="122353"/>
-    <DB_EXAMPLE value="DRIVER={SQL Server};SERVER=10.5.1.1;DATABASE=MAIN_DB;UID=ADMIN_USER;PWD=pa$$word"/>
-    <API_ID_EXAMPLE value="147852369+369852147"/>
-</root>

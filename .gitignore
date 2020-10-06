@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-src/log/util.py.txt
+tests/log/util.py.txt
 
 .idea/
 

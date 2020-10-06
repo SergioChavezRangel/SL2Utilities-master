@@ -1,7 +1,7 @@
-# SL2Utilities
+# sl2util
 
-On this project, I pretend to handle all the libs commonly used  across 
-all the projects.
+On this project, I pretend to handle all the libs commonly shared across 
+all the automation projects.
 
 Functions:
 
