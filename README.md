@@ -1,7 +1,7 @@
 # sl2util
 > Automation Common Tasks - Logger & ConfigData.
 
-
+_v1.0.0 on Python3.8_
 
 On this project, I pretend to handle all the libs commonly shared across 
 all the automation projects.
@@ -21,8 +21,6 @@ logger:
     -- as an alternative to the logging lib
 
 This project is part of the common L2System packages for automation.
-
-![](header.png)
 
 ## Installation
 
@@ -80,9 +78,4 @@ Distributed under the MIT license. See ``LICENSE`` for more information.
 
 
 <!-- Markdown link & img dfn's -->
-[npm-image]: https://img.shields.io/npm/v/datadog-metrics.svg?style=flat-square
-[npm-url]: https://npmjs.org/package/datadog-metrics
-[npm-downloads]: https://img.shields.io/npm/dm/datadog-metrics.svg?style=flat-square
-[travis-image]: https://img.shields.io/travis/dbader/node-datadog-metrics/master.svg?style=flat-square
-[travis-url]: https://travis-ci.org/dbader/node-datadog-metrics
 [Docs]: https://github.com/SergioChavezRangel/SL2Utilities-master/tree/master/tests

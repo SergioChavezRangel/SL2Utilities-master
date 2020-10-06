@@ -14,7 +14,6 @@ import sys
 import sl2util.logger as logger
 import sl2util.configdatareader as cryptlib
 
-
 ##### All AutomationL2Prj must start at least here #####
 BASE_FILE = os.path.basename(sys.argv[0])
 BASE_PATH = os.getcwd()
