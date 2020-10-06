@@ -13,6 +13,7 @@ import os
 import sys
 import sl2util.logger as logger
 import sl2util.configdatareader as cryptlib
+import sl2util.dbhandler as db
 
 ##### All AutomationL2Prj must start at least here #####
 BASE_FILE = os.path.basename(sys.argv[0])
@@ -21,12 +22,14 @@ FULL_PATH_FILE = os.getcwd() + '\\' + BASE_FILE
 logger.setPath(BASE_PATH)
 logger.setFileName(BASE_FILE)
 
+
 def _test():
     option = -1
     while option != 0:
         os.system('cls')
         print('OPTIONS: \n1. Encode Settings (File->File)\n2. Decode Settings (File->File)')
         print('3. Decode Settings (File->Memory)\n4. Get Token from Date\n5. Get Expiredate from Token')
+        print('6. Check DataBase (MSSQL)\n7. Check DataBase (Oracle)\n0. EXIT')
         option = int(input('Choose what to do??:'))
         if option == 1:
             KeyPassword = input('Personal KeyPassword:')
@@ -63,8 +66,21 @@ def _test():
             tk = input('Token to validate:')
             print('ExpireDate: ' + cryptlib.getExpireDate(tk))
 
+        if option == 6:
+            dbconn = input('DB Conn string:')
+            testdb = db.DbSQL(dbconn)
+            sql = 'SELECT getdate() as date'
+            print(testdb.getrow(sql))
+
+        if option == 7:
+            dbconn = input('DB Conn string:')
+            testdb = db.DbOra(dbconn)
+            sql = 'SELECT sysdate as now from dual'
+            print(testdb.getrow(sql))
+
     logger.purger()
-    
+
+
 ##### All AutomationL2Prj must start at least here #####
 
 

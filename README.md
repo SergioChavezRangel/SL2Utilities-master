@@ -1,7 +1,7 @@
 # sl2util
 > Automation Common Tasks - Logger & ConfigData.
 
-_v1.0.0 on Python3.8_
+_v1.0.1 on Python3.8_
 
 On this project, I pretend to handle all the libs commonly shared across 
 all the automation projects.
@@ -19,6 +19,12 @@ logger:
 
     -- create and handle log files
     -- as an alternative to the logging lib
+    
+dbhandler
+
+    -- Connection to Oracle/MSSQL
+    -- Retrieve Table, SingleRow
+    -- Set Insert, updates, SPs
 
 This project is part of the common L2System packages for automation.
 
@@ -62,6 +68,8 @@ python util.py
 
 ## Release History
 
+* 1.0.1
+    * ADDED: DataBase Handler
 * 1.0.0
     * RELEASE: Packaged and available (module code remains unchanged)
     * CHANGE: Project Layout as standard
