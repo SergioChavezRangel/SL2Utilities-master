@@ -1,5 +1,5 @@
 # sl2util
-> Automation common task fro logger & ConfigData.
+> Automation Common Tasks - Logger & ConfigData.
 
 [![Pyton Version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
