@@ -1,9 +1,7 @@
 # sl2util
 > Automation Common Tasks - Logger & ConfigData.
 
-[![Pyton Version][npm-image]][npm-url]
-[![Build Status][travis-image]][travis-url]
-[![Downloads Stats][npm-downloads]][npm-url]
+
 
 On this project, I pretend to handle all the libs commonly shared across 
 all the automation projects.
@@ -73,19 +71,12 @@ cryptlib.encodeXML(False)
 
 ## Meta
 
-Sergio Chavez Rangel – [@YourTwitter](https://twitter.com/dbader_org) – steel.l2.automation@gmail.com
+Sergio Chavez Rangel – steel.l2.automation@gmail.com
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
-[Me @Github](https://github.com/SergioChavezRangel/)
+[SergioChavez@Github](https://github.com/SergioChavezRangel/)
 
-## Contributing
-
-1. Fork it (<https://github.com/SergioChavezRangel/SL2Utilities-master/fork>)
-2. Create your feature branch (`git checkout -b feature/fooBar`)
-3. Commit your changes (`git commit -am 'Add some fooBar'`)
-4. Push to the branch (`git push origin feature/fooBar`)
-5. Create a new Pull Request
 
 <!-- Markdown link & img dfn's -->
 [npm-image]: https://img.shields.io/npm/v/datadog-metrics.svg?style=flat-square
