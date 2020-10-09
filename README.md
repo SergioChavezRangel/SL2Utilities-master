@@ -73,7 +73,7 @@ python util.py
 
 ## Release History
 
-* 1.0.2
+* 1.0.3
     * ADDED: utils, Mail sender and a text parser
 * 1.0.1
     * ADDED: DataBase Handler

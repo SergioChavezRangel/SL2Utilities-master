@@ -14,6 +14,7 @@ import sys
 import sl2util.logger as logger
 import sl2util.configdatareader as cryptlib
 import sl2util.dbhandler as db
+import sl2util.utils as util
 
 ##### All AutomationL2Prj must start at least here #####
 BASE_FILE = os.path.basename(sys.argv[0])
@@ -29,7 +30,7 @@ def _test():
         os.system('cls')
         print('OPTIONS: \n1. Encode Settings (File->File)\n2. Decode Settings (File->File)')
         print('3. Decode Settings (File->Memory)\n4. Get Token from Date\n5. Get Expiredate from Token')
-        print('6. Check DataBase (MSSQL)\n7. Check DataBase (Oracle)\n0. EXIT')
+        print('6. Check DataBase (MSSQL)\n7. Check DataBase (Oracle)\n8. Mail\n0. EXIT')
         option = int(input('Choose what to do??:'))
         if option == 1:
             KeyPassword = input('Personal KeyPassword:')
@@ -77,6 +78,9 @@ def _test():
             testdb = db.DbOra(dbconn)
             sql = 'SELECT sysdate as now from dual'
             print(testdb.getrow(sql))
+        if option == 8:
+            util.mail_test('Subject','schavezr@gan.com.mx', '')
+            # util.html_mailer('Example','body text', 'schavezr@gan.com.mx','','MNTTO', '','')
 
     logger.purger()
 

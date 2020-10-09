@@ -2,20 +2,18 @@ import fnmatch
 import os
 import sys
 from datetime import timedelta
-import win32com.client as win32
 import sl2util.logger as logger
+import win32com.client as win32
 
 
 def html_mailer(subject, body, to_address, cc_address, station, file, path):
     try:
-        logger.writeLog('html_mailer')
-        oOutlook = win32.Dispatch("outlook.Application")
-        Msg = oOutlook.CreateItem(0)
+        outlook = win32.Dispatch('outlook.application')
+        mail = outlook.CreateItem(0)
         if len(to_address) > 3:
-            Msg.To = to_address
+            mail.To = to_address
         if len(cc_address) > 3:
-            Msg.CC = cc_address
-        logger.writeLog('{};{};{};{};{};{};{}'.format(subject, body, to_address, cc_address, station, file, path))
+            mail.CC = cc_address
         if len(file) > 0 and len(path) > 0:
             logger.writeLog("                        Looking at Dir - '" + path + "'. PID ")
             logger.writeLog("                              for File - '" + file + "'. PID ")
@@ -25,13 +23,13 @@ def html_mailer(subject, body, to_address, cc_address, station, file, path):
                         if fnmatch.fnmatch(fileName, file):
                             attachment = path + fileName
                             logger.writeLog("                 Preparing File: " + attachment + ". PID ")
-                            Msg.Attachments.Add(attachment)
+                            mail.Attachments.Add(attachment)
             else:
                 if os.path.exists(path + file):
                     attachment = path + file
                     logger.writeLog("                 Preparing File: " + attachment + ". PID ")
-                    Msg.Attachments.Add(attachment)
-        logger.writeLog("                    Mail Message. PID ")
+                    mail.Attachments.Add(attachment)
+        logger.writeLog("                    Mail Message.")
         logger.writeLog("                             To: " + to_address)
         logger.writeLog("                             CC: " + cc_address)
         logger.writeLog("                        Subject: " + subject)
@@ -42,9 +40,9 @@ def html_mailer(subject, body, to_address, cc_address, station, file, path):
         HTMLBody = HTMLBody.replace("%Station", station)
         HTMLBody = HTMLBody.replace("%Body", body)
         print(HTMLBody)
-        Msg.HTMLBody = HTMLBody
-        Msg.Subject = subject
-        Msg.Send()
+        mail.HTMLBody = HTMLBody
+        mail.Subject = subject
+        mail.Send()
         logger.writeLog("            Mail Done!. PID ")
         return True
     except:
@@ -119,12 +117,12 @@ def text_decorator(text, date, shift, heat, tmt, sequence, in_seq):
     return text
 
 
-def mail_test():
-    import win32com.client as win32
+def mail_test(subject, to):
     outlook = win32.Dispatch('outlook.application')
     mail = outlook.CreateItem(0)
-    mail.To = 'schavezr@gan.com.mx'
-    mail.Subject = 'Message subject'
+    if len(to) > 5:
+        mail.To = to
+    mail.Subject = subject
     # mail.Body = 'Message body'
     mail.HTMLBody = '<h2>HTML Message body</h2>'  # this field is optional
 
