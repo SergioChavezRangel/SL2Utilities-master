@@ -2,19 +2,20 @@ import fnmatch
 import os
 import sys
 from datetime import timedelta
-
-import win32com
-
+import win32com.client as win32
 import sl2util.logger as logger
 
 
 def html_mailer(subject, body, to_address, cc_address, station, file, path):
     try:
-        oOutlook = win32com.client.Dispatch("Outlook.Application")
+        logger.writeLog('html_mailer')
+        oOutlook = win32.Dispatch("outlook.Application")
         Msg = oOutlook.CreateItem(0)
-        Msg.To = to_address
-        Msg.CC = cc_address
-
+        if len(to_address) > 3:
+            Msg.To = to_address
+        if len(cc_address) > 3:
+            Msg.CC = cc_address
+        logger.writeLog('{};{};{};{};{};{};{}'.format(subject, body, to_address, cc_address, station, file, path))
         if len(file) > 0 and len(path) > 0:
             logger.writeLog("                        Looking at Dir - '" + path + "'. PID ")
             logger.writeLog("                              for File - '" + file + "'. PID ")
@@ -116,3 +117,19 @@ def text_decorator(text, date, shift, heat, tmt, sequence, in_seq):
     text = text.replace("%Seq", sequence)
     text = text.replace("%Shift", Shift)
     return text
+
+
+def mail_test():
+    import win32com.client as win32
+    outlook = win32.Dispatch('outlook.application')
+    mail = outlook.CreateItem(0)
+    mail.To = 'schavezr@gan.com.mx'
+    mail.Subject = 'Message subject'
+    # mail.Body = 'Message body'
+    mail.HTMLBody = '<h2>HTML Message body</h2>'  # this field is optional
+
+    # To attach a file to the email (optional):
+    # attachment  = "Path to the attachment"
+    # mail.Attachments.Add(attachment)
+
+    mail.Send()

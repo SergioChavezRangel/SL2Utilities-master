@@ -1,4 +1,5 @@
-pyodbc~=4.0.30
-untangle~=1.1.1
-cryptography~=2.9.2
-setuptools~=49.2.0
+pyodbc>=4.0.30
+untangle>=1.1.1
+cryptography>=2.9.2
+setuptools>=49.2.0
+cx_Oracle
