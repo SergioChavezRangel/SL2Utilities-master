@@ -39,6 +39,7 @@ class DbSQL:
         self.dbSQL.commit()
 
 
+
 class DbOra:
     """ Create a new OracleServer type DB """
 
@@ -47,21 +48,21 @@ class DbOra:
         self.dbconn = dbconn
         self.dbOra = cx_Oracle.Connection(dbconn)
 
-    def rows_to_dict_list(self, cursor):
-        columns = [i[0] for i in cursor.description]
-        return [dict(zip(columns, row)) for row in cursor]
-
     def getrows(self, query):
         cursorOra = self.dbOra.cursor()
         rs = cursorOra.execute(query)
-        return self.rows_to_dict_list(cursorOra)
+        return rows_to_dict_list(cursorOra)
 
     def getrow(self, query):
         cursorOra = self.dbOra.cursor()
         rs = cursorOra.execute(query)
-        return self.rows_to_dict_list(cursorOra)[0]
+        return rows_to_dict_list(cursorOra)[0]
 
     def setrow(self, query):
         cursorOra = self.dbOra.cursor()
         cursorOra.execute(query)
 
+
+def rows_to_dict_list(cursor):
+    columns = [i[0] for i in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor]
