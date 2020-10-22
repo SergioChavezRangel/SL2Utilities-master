@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name='sl2util',
-    version='1.0.5',
+    version='1.2.0',
     packages=['sl2util'],
     url='',
     license='MIT License',
@@ -11,5 +11,6 @@ setup(
     author_email='l2.steel.automation@gmail.com',
     description='Steelmaking Automation Utils',
     long_description=open('README.md').read(),
-    py_modules=['sl2util.logger', 'sl2util.configdatareader', 'sl2util.dbhandler', 'sl2util.utils', 'sl2util.l1handler']
+    py_modules=['sl2util.logger', 'sl2util.configdatareader', 'sl2util.dbhandler', 'sl2util.utils',
+                'sl2util.l1handler', 'sl2util.watchdog']
 )

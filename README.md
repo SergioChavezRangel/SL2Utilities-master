@@ -1,7 +1,7 @@
 # sl2util
 > Automation Common Tasks - Logger & ConfigData.
 
-_v1.0.5 on Python3.8 & Python3.9_
+_v1.2.0 on Python3.8 & Python3.9_
 
 On this project, I pretend to handle all the libs commonly shared across 
 all the automation projects.
@@ -73,6 +73,8 @@ python util.py
 
 ## Release History
 
+* 1.2.0
+    * ADDED: Watchdog handler for services
 * 1.0.5
     * ADDED: Level1 Handler (OPC-UA connection).
 * 1.0.3

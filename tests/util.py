@@ -15,6 +15,7 @@ import sl2util.logger as logger
 import sl2util.configdatareader as cryptlib
 import sl2util.dbhandler as db
 import sl2util.utils as util
+import sl2util.watchdog as watchdog
 
 ##### All AutomationL2Prj must start at least here #####
 BASE_FILE = os.path.basename(sys.argv[0])
@@ -78,9 +79,14 @@ def _test():
             testdb = db.DbOra(dbconn)
             sql = 'SELECT sysdate as now from dual'
             print(testdb.getrow(sql))
+
         if option == 8:
             util.mail_test('Subject','schavezr@gan.com.mx', '')
             # util.html_mailer('Example','body text', 'schavezr@gan.com.mx','','MNTTO', '','')
+
+        if option == 9:
+            # watchdog.service_name = BASE_FILE.encode()
+            watchdog.start_watchdog(BASE_FILE.encode(), 54321)
 
     logger.purger()
 
