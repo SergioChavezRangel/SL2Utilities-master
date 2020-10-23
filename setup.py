@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name='sl2util',
-    version='1.2.0',
+    version='1.2.2',
     packages=['sl2util'],
     url='',
     license='MIT License',

@@ -41,6 +41,7 @@ def _test():
             cryptlib.set_key(key)
             cryptlib.setDecFilePath(BASE_PATH + '\\' + DecFile, True)
             cryptlib.setEncFilePath(BASE_PATH + '\\' + 'enc' + DecFile, True)
+            cryptlib.setConfigFilePath(BASE_PATH + '\\' + 'Config.xml', True)
             cryptlib.encodeXML(False)
 
         if option in (2, 3):
@@ -48,6 +49,7 @@ def _test():
             EncFile = input('Encoded ProjectFile Name(./):')
             cryptlib.setDecFilePath(BASE_PATH + '\\' + EncFile, True)
             cryptlib.setEncFilePath(BASE_PATH + '\\' + EncFile, True)
+            cryptlib.setConfigFilePath(BASE_PATH + '\\' + 'Config.xml', True)
             createFile = False
             if option == 2:
                 createFile = True
@@ -56,6 +58,9 @@ def _test():
             Key = cryptlib.isValidKey(Config["Token"])
             print('TokenValid: ' + str(Key))
             print('Config.ExpireDate: ' + cryptlib.getExpireDate(Config["Token"]))
+            print('OpenConfig')
+            Config = (cryptlib.getOpenConfig())
+            print(Config)
 
         if option == 4:
             date = input('Date (YYYY-MM-DD):')
@@ -86,7 +91,9 @@ def _test():
 
         if option == 9:
             # watchdog.service_name = BASE_FILE.encode()
-            watchdog.start_watchdog(BASE_FILE.encode(), 54321)
+
+            port = int(cryptlib.getOpenConfig()['WatchdogPort'])
+            watchdog.start_watchdog(BASE_FILE.encode(), port)
 
     logger.purger()
 

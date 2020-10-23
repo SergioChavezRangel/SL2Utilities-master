@@ -17,6 +17,7 @@ import xml.etree.ElementTree as Xml
 key = Fernet.generate_key()
 decryptedFile = 'Decrypted.xml'
 encryptedFile = 'Encrypted.xml'
+configFile = 'Config.xml'
 
 
 def get_key(password):
@@ -85,6 +86,12 @@ def getEncFilePath(log):
         logger.writeLog('getEncFilePath: ' + encryptedFile)
     return encryptedFile
 
+
+def setConfigFilePath(file_path, log):
+    global configFile
+    configFile = file_path
+    if log:
+        logger.writeLog('setConfigFilePath: ' + encryptedFile)
 
 def encodeXML(log):
     global decryptedFile
@@ -201,6 +208,17 @@ def getTokenDate(expire_date):
     except:
         return 122353
 
+
+def getOpenConfig():
+    filename = configFile
+    tree = Xml.ElementTree(file=filename)
+    root = tree.getroot()
+    Values = []
+    for elt in root:
+        Tag = elt.tag
+        Value = elt.get('value')
+        Values.append((Tag, Value))
+    return dict(Values)
 
 print("DefaultKey: ", binascii.hexlify(bytearray(key)))
 print("DefaultFile: ", decryptedFile)
