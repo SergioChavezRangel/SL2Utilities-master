@@ -2,13 +2,15 @@
 An alternative to the logging lib
 
 """
-
+import datetime
 import os
-from time import localtime, strftime
+from time import strftime
 import time
 import fnmatch
 import sys
 from os import stat
+
+from dateutil import tz
 
 Path = os.getcwd() + '\\log'
 File_Name = os.path.basename(sys.argv[0]).replace(".py", "")
@@ -96,7 +98,12 @@ def writeLog(log):
     global File_Name
     f = open(Path + "\\" + File_Name + '.txt', 'a')
     f.write("\n")
-    f.write(strftime("%d/%b/%Y %H:%M:%S %a. ", localtime()))
+    to_zone = tz.tzlocal()
+    from_zone = tz.tzutc()
+    utc = datetime.datetime.utcnow()
+    utc = utc.replace(tzinfo=from_zone)
+    central = utc.astimezone(to_zone)
+    f.write(central.strftime("%d/%b/%Y %H:%M:%S %a. "))  # localtime()))
     f.write(log)
     f.close()
 

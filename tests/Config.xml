@@ -1,4 +1,7 @@
 <?xml version="1.0"?>
 <root>
+    <WatchdogAddress value="132.132.35.113"/>
     <WatchdogPort value="60001"/>
+    <WatchdogDB value="SMADDONS"/>
+    <WatchdogAutoRegister value="1"/>
 </root>
