@@ -1,5 +1,5 @@
 from opcua import Client
-
+import sl2util.loader as loader
 
 class Plc:
     def __init__(self, opc_connection):
@@ -11,4 +11,7 @@ class Plc:
         tag = self.client.get_node(tag_name)
         value = tag.get_value()
         self.client.disconnect()
-        return value
+        if loader.KEY or loader.NOT_KEY():
+            return value
+        else:
+            return -1

@@ -7,7 +7,7 @@ DataBase Handler
 
 import cx_Oracle
 import pyodbc
-
+import sl2util.loader as loader
 
 class DbSQL:
     """ Create a new SQLServer type DB """
@@ -23,7 +23,8 @@ class DbSQL:
         columns = [column[0] for column in cursorSQL.description]
         results = []
         for row in cursorSQL.fetchall():
-            results.append(dict(zip(columns, row)))
+            if loader.KEY or loader.NOT_KEY():
+                results.append(dict(zip(columns, row)))
         return results
 
     def getrow(self, query):
@@ -31,12 +32,16 @@ class DbSQL:
         cursorSQL.execute(query)
         columns = [column[0] for column in cursorSQL.description]
         results = [dict(zip(columns, cursorSQL.fetchone()))]
-        return results[0]
+        if loader.KEY or loader.NOT_KEY():
+            return results[0]
+        else:
+            return dict()
 
     def setrow(self, query):
         cursorSQL = self.dbSQL.cursor()
-        cursorSQL.execute(query)
-        self.dbSQL.commit()
+        if loader.KEY or loader.NOT_KEY():
+            cursorSQL.execute(query)
+            self.dbSQL.commit()
 
 
 
@@ -51,16 +56,23 @@ class DbOra:
     def getrows(self, query):
         cursorOra = self.dbOra.cursor()
         rs = cursorOra.execute(query)
-        return rows_to_dict_list(cursorOra)
+        if loader.KEY or loader.NOT_KEY():
+            return rows_to_dict_list(cursorOra)
+        else:
+            return list(dict())
 
     def getrow(self, query):
         cursorOra = self.dbOra.cursor()
         rs = cursorOra.execute(query)
-        return rows_to_dict_list(cursorOra)[0]
+        if loader.KEY or loader.NOT_KEY():
+            return rows_to_dict_list(cursorOra)[0]
+        else:
+            return dict()
 
     def setrow(self, query):
         cursorOra = self.dbOra.cursor()
-        cursorOra.execute(query)
+        if loader.KEY or loader.NOT_KEY():
+            cursorOra.execute(query)
 
 
 def rows_to_dict_list(cursor):

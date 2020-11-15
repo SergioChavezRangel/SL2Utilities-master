@@ -1,11 +1,7 @@
-# first of all import the socket library
-import datetime
 import socket
 import sys
 import threading
-from dateutil import tz
 import sl2util.dbhandler as db
-from time import strftime
 
 
 # next create a socket object
@@ -51,16 +47,8 @@ def watchdog_job():
         try:
             # Establish connection with client.
             c, addr = s.accept()
-            # print('Got connection from', addr)
             # send a thank you message to the client.
-
-            to_zone = tz.tzlocal()
-            from_zone = tz.tzutc()
-            utc = datetime.utcnow()
-            utc = utc.replace(tzinfo=from_zone)
-            central = utc.astimezone(to_zone)
-            timestamp = central.strftime("%Y/%m/%d %H:%M:%S")  # localtime())
-            message = 'RUN'  # _service_name + b';' + timestamp.encode()
+            message = 'RUN'
             c.send(message)
         except:
             print("Unexpected error:", sys.exc_info()[0])
@@ -82,7 +70,6 @@ def register(service_name, address, port, dbconn):
     sql = "PROC_SL2_SET_SERVICE '{}', '{}', {}".format(service_name.decode(), address, port)
     # print(sql)
     watchdogdb.setrow(sql)
-    pass
 
 
 def update():
@@ -91,4 +78,5 @@ def update():
            WHERE  SERVICE_NAME = '{}'".format(_service_name.decode())
     # print(sql)
     watchdogdb.setrow(sql)
+
 

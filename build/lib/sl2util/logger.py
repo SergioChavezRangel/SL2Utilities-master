@@ -4,7 +4,6 @@ An alternative to the logging lib
 """
 import datetime
 import os
-from time import strftime
 import time
 import fnmatch
 import sys
@@ -14,6 +13,7 @@ from dateutil import tz
 
 Path = os.getcwd() + '\\log'
 File_Name = os.path.basename(sys.argv[0]).replace(".py", "")
+File_Name = File_Name.replace(".exe", "")
 fKeepDays = 30.0
 fKeepSize = 10485760
 
