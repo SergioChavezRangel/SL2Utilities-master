@@ -89,7 +89,7 @@ python util.py
 
 ## Meta
 
-Sergio Chavez Rangel – steel.l2.automation@gmail.com
+Sergio Chavez Rangel – level2.steel.automation@gmail.com
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
