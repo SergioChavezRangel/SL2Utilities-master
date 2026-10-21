@@ -1,0 +1,21 @@
+services:
+  watchdog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sl2util-watchdog:latest
+    container_name: sl2util-watchdog
+    restart: unless-stopped
+    ports:
+      - "65001:65001"
+    environment:
+      - WATCHDOG_PORT=65001
+      - WATCHDOG_NAME=sl2_steel_watchdog
+    volumes:
+      - ./log:/app/log
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket, sys; s = socket.socket(); s.settimeout(2); s.connect(('127.0.0.1', 65001)); res = s.recv(1024); sys.exit(0 if b'RUN' in res else 1)\""]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

@@ -1,82 +1,183 @@
+"""
+Watchdog Service
+Provides a TCP heartbeat listener and service registration for Level 2 automation.
+Can run as a standalone daemon in Docker or as a background service.
+"""
+import argparse
+import os
 import socket
-import sys
 import threading
-import sl2util.dbhandler as db
+import time
+from typing import Optional
+
+from sl2util import logger
+
+_server_instance: Optional["WatchdogServer"] = None
+
+# Backward compatibility globals
+_port: int = 12345
+_service_name: bytes = b"main_watchdog"
+_dbconn: str = ""
+autoset: bool = False
 
 
-# next create a socket object
-s = socket.socket()
-print("Socket successfully created")
+class WatchdogServer:
+    """Manages a TCP heartbeat server responding with RUN to client pings."""
 
-# reserve a port on your computer in our
-# case it is 12345 but it can be anything
-_port = 12345
-_service_name = b'main_watchdog'
-_dbconn = ''
-autoset = False
+    def __init__(self, service_name: str | bytes, port: int = 12345):
+        self.service_name = service_name if isinstance(service_name, bytes) else service_name.encode("utf-8")
+        self.port = int(port)
+        self.socket: socket.socket | None = None
+        self.running = False
+        self.thread: threading.Thread | None = None
 
-def start_watchdog(service_name, port):
-    global _service_name
-    global _port
-    global autoset
-    _service_name = service_name
-    _port = port
+    def start(self, host: str = "0.0.0.0") -> None:
+        """Start the watchdog server listening on the specified port."""
+        if self.running:
+            return
 
-    # Next bind to the port
-    # we have not typed any ip in the ip field
-    # instead we have inputted an empty string
-    # this makes the server listen to requests
-    # coming from other computers on the network
-    s.bind(('', _port))
-    print("socket binded to %s" % _port)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind((host, self.port))
+        self.socket.listen(5)
+        self.socket.settimeout(1.0)
+        self.running = True
 
-    # put the socket into listening mode
-    s.listen(5)
-    # print("socket is listening")
-    print('watchdog running...')
-    wdjob = threading.Thread(target=watchdog_job, args=())
-    wdjob.start()
+        self.thread = threading.Thread(target=self._run_loop, daemon=True, name="sl2util-watchdog")
+        self.thread.start()
+        logger.writeLog(f"Watchdog server started on {host}:{self.port} for {self.service_name.decode('utf-8', errors='replace')}")
+        print(f"Watchdog running on {host}:{self.port}...")
+
+    def _run_loop(self) -> None:
+        while self.running:
+            try:
+                client, addr = self.socket.accept()
+            except TimeoutError:
+                continue
+            except Exception:
+                if not self.running:
+                    break
+                continue
+
+            try:
+                # Python 3 socket expects bytes
+                client.sendall(b"RUN\n")
+            except Exception as e:
+                logger.writeLog(f"Watchdog client send error: {e}")
+            finally:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+
+    def stop(self) -> None:
+        """Gracefully stop the watchdog server."""
+        self.running = False
+        if self.socket:
+            try:
+                self.socket.close()
+            except Exception:
+                pass
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=2.0)
+        logger.writeLog(f"Watchdog server stopped on port {self.port}")
+
+
+def start_watchdog(service_name: str | bytes, port: int) -> WatchdogServer:
+    """Start watchdog background listener (backward compatible function)."""
+    global _server_instance, _service_name, _port, autoset
+    _service_name = service_name if isinstance(service_name, bytes) else service_name.encode("utf-8")
+    _port = int(port)
+
+    if _server_instance:
+        _server_instance.stop()
+
+    _server_instance = WatchdogServer(_service_name, _port)
+    _server_instance.start()
+
     if autoset:
         update()
 
-
-def watchdog_job():
-    # a forever loop until we interrupt it or
-    # an error occurs
-    while True:
-        try:
-            # Establish connection with client.
-            c, addr = s.accept()
-            # send a thank you message to the client.
-            message = 'RUN'
-            c.send(message)
-        except:
-            print("Unexpected error:", sys.exc_info()[0])
-        finally:
-            # Close the connection with the client
-            c.close()
+    return _server_instance
 
 
-def register(service_name, address, port, dbconn):
-    global _service_name
-    global _port
-    global _dbconn
-    global autoset
+def stop_watchdog() -> None:
+    """Stop active watchdog background listener."""
+    global _server_instance
+    if _server_instance:
+        _server_instance.stop()
+        _server_instance = None
+
+
+def register(service_name: str | bytes, address: str, port: int, dbconn: str) -> None:
+    """Register service in the database."""
+    global _service_name, _port, _dbconn, autoset
     autoset = True
-    _service_name = service_name
-    _port = port
+    _service_name = service_name if isinstance(service_name, bytes) else service_name.encode("utf-8")
+    _port = int(port)
     _dbconn = dbconn
-    watchdogdb = db.DbSQL(_dbconn)
-    sql = "PROC_SL2_SET_SERVICE '{}', '{}', {}".format(service_name.decode(), address, port)
-    # print(sql)
-    watchdogdb.setrow(sql)
+
+    if not _dbconn:
+        return
+
+    try:
+        import sl2util.dbhandler as db
+        watchdogdb = db.DbSQL(_dbconn)
+        svc_name_str = _service_name.decode("utf-8", errors="replace")
+        sql = "PROC_SL2_SET_SERVICE ?, ?, ?"
+        try:
+            watchdogdb.setrow(sql, (svc_name_str, address, port))
+        except Exception:
+            # Fallback to direct string if driver does not support params for stored procedures
+            fallback_sql = f"PROC_SL2_SET_SERVICE '{svc_name_str}', '{address}', {port}"
+            watchdogdb.setrow(fallback_sql)
+    except Exception as e:
+        logger.writeLog(f"Watchdog register error: {e}")
 
 
-def update():
-    watchdogdb = db.DbSQL(_dbconn)
-    sql = "UPDATE SL2_SERVICES_CONFIG SET STATUS = 1, TIME_STAMP = getdate() \
-           WHERE  SERVICE_NAME = '{}'".format(_service_name.decode())
-    # print(sql)
-    watchdogdb.setrow(sql)
+def update() -> None:
+    """Update service heartbeat status in the database."""
+    global _service_name, _dbconn
+    if not _dbconn:
+        return
+
+    try:
+        import sl2util.dbhandler as db
+        watchdogdb = db.DbSQL(_dbconn)
+        svc_name_str = _service_name.decode("utf-8", errors="replace")
+        sql = "UPDATE SL2_SERVICES_CONFIG SET STATUS = 1, TIME_STAMP = getdate() WHERE SERVICE_NAME = ?"
+        try:
+            watchdogdb.setrow(sql, (svc_name_str,))
+        except Exception:
+            fallback_sql = (
+                f"UPDATE SL2_SERVICES_CONFIG SET STATUS = 1, TIME_STAMP = getdate() "
+                f"WHERE SERVICE_NAME = '{svc_name_str}'"
+            )
+            watchdogdb.setrow(fallback_sql)
+    except Exception as e:
+        logger.writeLog(f"Watchdog update error: {e}")
 
 
+def main() -> None:
+    """CLI entrypoint for running the watchdog service daemon (e.g. in Docker)."""
+    parser = argparse.ArgumentParser(description="SL2 Watchdog Service Daemon")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("WATCHDOG_PORT", 65001)), help="Watchdog port")
+    parser.add_argument("--name", type=str, default=os.environ.get("WATCHDOG_NAME", "sl2_watchdog"), help="Service name")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Bind host")
+    args = parser.parse_args()
+
+    print(f"Starting SL2 Watchdog '{args.name}' on {args.host}:{args.port}...")
+    server = WatchdogServer(args.name, args.port)
+    server.start(args.host)
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping Watchdog...")
+        server.stop()
+        print("Watchdog stopped.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,9 +1,6 @@
-pyodbc>=4.0.30
-untangle>=1.1.1
-cryptography>=2.9.2
-setuptools>=49.2.0
-cx_Oracle
-sl2util>=1.0.3
-opcua>=0.98.12
-timeloop~=1.0.2
-python-dateutil~=2.8.1
+# Core Dependencies for sl2util
+cryptography>=41.0.0
+python-dateutil>=2.8.2
+oracledb>=2.0.0
+pyodbc>=4.0.35
+asyncua>=1.0.0
