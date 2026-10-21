@@ -3,7 +3,32 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-tests/log/util.py.txt
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
 
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# IDEs
 .idea/
+.vscode/
+*.swp
+*.swo
 
+# Testing & Linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Logs
+log/
+*/log/
+*.log
+tests/log/util.py.txt

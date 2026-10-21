@@ -1,354 +1,483 @@
+"""
+Automation Utility Helpers
+Provides steelmaking text decorators, cross-platform file and zip management,
+email notifications (SMTP with Windows Outlook fallback), and FTP upload utilities.
+"""
+import datetime
 import fnmatch
 import os
 import shutil
+import smtplib
 import subprocess
 import sys
+import time
+import zipfile
 from datetime import timedelta
-import time as time
-from ftplib import FTP
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from pathlib import Path
+from typing import Any
 
-import sl2util.loader as loader
-import win32com.client as win32
+from sl2util import logger
 
-
-def html_mailer(subject, body, to_address, cc_address, station, file, path):
-    file = str(file)
-    path = str(path)
+# Attempt pywin32 import only on Windows platforms
+_WIN32_AVAILABLE = False
+if sys.platform == "win32":
     try:
-        outlook = win32.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        if to_address is not None:
-            mail.To = to_address
-        else:
-            to_address = ''
-        if cc_address is not None:
-            mail.CC = cc_address
-        else:
-            cc_address = ''
-        if file is not None and path is not None:
-            loader.logger.writeLog("                        Looking at Dir - '" + path)
-            loader.logger.writeLog("                              for File - '" + file)
-            if file.find("**") == 0:
-                if os.path.exists(path):
-                    for fileName in os.listdir(path):
-                        attachment = path + fileName
-                        loader.logger.writeLog("                 Preparing File: " + attachment)
-                        mail.Attachments.Add(attachment)
-            elif file.find("*") > 0:
-                if os.path.exists(path):
-                    for fileName in os.listdir(path):
-                        if fnmatch.fnmatch(fileName, file):
-                            attachment = path + fileName
-                            loader.logger.writeLog("                 Preparing File: " + attachment)
-                            mail.Attachments.Add(attachment)
-            else:
-                if os.path.exists(path + file):
-                    attachment = path + file
-                    loader.logger.writeLog("                 Preparing File: " + attachment + ". PID ")
-                    mail.Attachments.Add(attachment)
-        loader.logger.writeLog("                    Mail Message.")
-        loader.logger.writeLog("                             To: " + to_address)
-        loader.logger.writeLog("                             CC: " + cc_address)
-        loader.logger.writeLog("                        Subject: " + subject)
-        HTMLBody = ""
-        f = open('MailSignature.html', "r")
-        if f.mode == 'r':
-            HTMLBody = f.read()
-        HTMLBody = HTMLBody.replace("%Station", station)
-        HTMLBody = HTMLBody.replace("%Body", body)
-        # print(HTMLBody)
-        mail.HTMLBody = HTMLBody
-        mail.Subject = subject
-        if loader.KEY or loader.NOT_KEY():
-            mail.Send()
-        loader.logger.writeLog("            Mail Done!. PID ")
-        return True
-    except:
-        loader.logger.writeLog("            ---html_mailer--- Unexpected error: " + str(sys.exc_info()[0]))
-        return False
+        import win32com.client as win32
+        _WIN32_AVAILABLE = True
+    except ImportError:
+        _WIN32_AVAILABLE = False
 
 
-def text_decorator(text, date, shift, heat, tmt, sequence, in_seq):
-    DayOfWeek = int(date.strftime("%w"))
-    DeltaDaysFwd = 0
-    DeltaDaysBak = 7
-    if DayOfWeek < 1:
-        DeltaDaysFwd = 1
-        DeltaDaysBak = 6
-    if DayOfWeek > 1:
-        DeltaDaysFwd = 8 - DayOfWeek
-        DeltaDaysBak = DayOfWeek - 1
-    iWeekOfYear = int(date.strftime("%U"))
-    WeekOfYear = "00"
-    if iWeekOfYear < 10:
-        WeekOfYear = "0" + str(iWeekOfYear)
-    else:
-        WeekOfYear = str(iWeekOfYear)
-    EndOfWeek = date + timedelta(days=DeltaDaysFwd)
-    StartOfWeek = date - timedelta(days=DeltaDaysBak)
-    DayWeekStart = StartOfWeek.strftime("%d")
-    MonthWeekStart = StartOfWeek.strftime("%m")
-    YearWeekStart = StartOfWeek.strftime("%Y")
-    DayWeekEnd = EndOfWeek.strftime("%d")
-    MonthWeekEnd = EndOfWeek.strftime("%m")
-    YearWeekEnd = EndOfWeek.strftime("%Y")
+def html_mailer(
+    subject: str,
+    body: str,
+    to_address: str | None = None,
+    cc_address: str | None = None,
+    station: str = "",
+    file: str | None = None,
+    path: str | None = None,
+) -> bool:
+    """
+    Send an HTML email with optional attachments.
+    Prefers standard SMTP (via env vars SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM)
+    and falls back to Windows Outlook COM if running on Windows with pywin32 installed.
+    """
+    to_address = to_address or ""
+    cc_address = cc_address or ""
+    file = str(file) if file is not None else ""
+    path = str(path) if path is not None else ""
 
-    Shift = "A"
-    if shift == 21:
-        Shift = "A"
-    if shift == 22:
-        Shift = "B"
-    if shift == 23:
-        Shift = "C"
-    heat = str(heat)
-    tmt = str(tmt)
-    if in_seq is not None:
-        if int(str(in_seq)) < 10:
-            in_seq = "0" + str(in_seq)
-        else:
-            in_seq = str(in_seq)
-    else:
-        in_seq = "00"
-    sequence = str(sequence)
-    WeekOfYear = str(WeekOfYear)
-    dd = date.strftime("%d")
-    mm = date.strftime("%m")
-    yyyy = date.strftime("%Y")
-    text = text.replace("%day", date.strftime("%A"))
-    text = text.replace("%ddd", date.strftime("%a"))
-    text = text.replace("%dd", dd)
-    text = text.replace("%mmm", date.strftime("%b"))
-    text = text.replace("%month", date.strftime("%B"))
-    text = text.replace("%mm", mm)
-    text = text.replace("%yyyy", yyyy)
-    text = text.replace("%dws", DayWeekStart)
-    text = text.replace("%dwe", DayWeekEnd)
-    text = text.replace("%mws", MonthWeekStart)
-    text = text.replace("%mwe", MonthWeekEnd)
-    text = text.replace("%yws", YearWeekStart)
-    text = text.replace("%ywe", YearWeekEnd)
-    text = text.replace("%WW", WeekOfYear)
-    text = text.replace("%UU", WeekOfYear)
-    text = text.replace("%Heat", heat)
-    text = text.replace("%Tmt", tmt)
-    text = text.replace("%InSeq", in_seq)
-    text = text.replace("%Seq", sequence)
-    text = text.replace("%Shift", Shift)
-    text = text.replace("%hift", Shift)
-    return text
+    logger.writeLog("                    Mail Message.")
+    logger.writeLog(f"                             To: {to_address}")
+    logger.writeLog(f"                             CC: {cc_address}")
+    logger.writeLog(f"                        Subject: {subject}")
 
-
-def mail_test(subject, to):
-    outlook = win32.Dispatch('outlook.application')
-    mail = outlook.CreateItem(0)
-    if len(to) > 5:
-        mail.To = to
-    mail.Subject = subject
-    mail.HTMLBody = '<h2>HTML Message body</h2>'
-    mail.Send()
-
-
-def zipper(file, path, zippath):
-    path = str(path)
-    file = str(file)
-    zippath = str(zippath)
-    try:
-        zipfile = file[:-(len(file) - file.rfind("."))] + '.zip'
-        # print(path, file, zippath, zipfile)
-        return zipper2(file, path, zipfile, zippath)
-    except:
-        loader.logger.writeLog("            ---zipper--- Unexpected error: " + str(sys.exc_info()[0]))
-        return False
-
-
-def zipper2(file, path, zipfile, zippath):
-    try:
-        import shutil
-        shutil.copy2(path + file, zippath)
-        cmd = '7z a "' + str(zippath + zipfile) + '" "' + str(path + file) + '"'
-        # print(cmd)
-        run_win_cmd(cmd)
-        return True
-    except:
-        loader.logger.writeLog("            ---zipper2--- Unexpected error: " + str(sys.exc_info()[0]))
-        return False
-
-
-def xls_to_pdf_publisher(xls_file, pdf_file, sent_to_print, script_path, pause):
-    result = 4
-    if os.path.exists(xls_file):
-        loader.logger.writeLog('File found: ' + str(xls_file))
-        loader.logger.writeLog('Try to save to: ' + str(pdf_file))
+    # Build HTML body from signature template if present
+    html_body = body
+    sig_file = Path("MailSignature.html")
+    if sig_file.exists():
         try:
-            if loader.KEY or loader.NOT_KEY():
-                subprocess.call("cmd /c " + script_path + " " + xls_file)
-            result = 1
-            if sent_to_print == 1:
-                pdf_file = pdf_file.replace("/", "\\")
-                if loader.KEY or loader.NOT_KEY():
-                    os.startfile(pdf_file, 'print')
-                result = 1
-                loader.logger.writeLog("                       Waiting to Printer....")
-                time.sleep(pause)
-                os.system("taskkill /im AcroRd32.exe /f")
-            return result
-        except:
-            loader.logger.writeLog("            ---xls_to_pdf_publisher--- Unexpected error: " + str(sys.exc_info()[0]))
-    else:
-        loader.logger.writeLog('File Not found: ' + str(xls_file))
-        result = 4
-    # updater(idx, 4, "Waiting for ExcelFile")
-    return result
+            with open(sig_file, encoding="utf-8") as f:
+                sig_content = f.read()
+                html_body = sig_content.replace("%Station", station).replace("%Body", body)
+        except Exception as e:
+            logger.writeLog(f"html_mailer: could not read MailSignature.html: {e}")
 
-
-def run_win_cmd(cmd):
-    cmd = str(cmd)
-    try:
-        result = []
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        for line in process.stdout:
-            result.append(str(line))
-        errcode = process.returncode
-        # for line in result:
-        #    logger.writeLog(line)
-        if errcode is not None:
-            raise Exception('cmd %s failed, see above for details', cmd)
-        return True
-    except:
-        loader.logger.writeLog("            ---run_win_cmd--- Unexpected error: " + str(sys.exc_info()[0]))
-        return False
-
-
-def delete_file(file, path):
-    path = str(path)
-    file = str(file)
-    try:
-        os.remove(path + file)
-        loader.logger.writeLog('               Deleting.... ' + path + file)
-        return True
-    except:
-        loader.logger.writeLog("            ---deleteFile--- Unexpected error: " + str(sys.exc_info()[0]))
-        return False
-
-
-def files_exists(file, path):
-    path = str(path)
-    file = str(file)
-    if os.path.exists(path):
-        if file.find("*") > 0:
-            for fileName in os.listdir(path):
-                if fnmatch.fnmatch(fileName, file):
-                    return True
+    # Resolve attachments
+    attachments: list[Path] = []
+    if path and file and Path(path).exists():
+        dir_path = Path(path)
+        logger.writeLog(f"                        Looking at Dir - '{path}'")
+        logger.writeLog(f"                              for File - '{file}'")
+        if file.startswith("**"):
+            attachments = [p for p in dir_path.iterdir() if p.is_file()]
+        elif "*" in file:
+            attachments = [p for p in dir_path.iterdir() if p.is_file() and fnmatch.fnmatch(p.name, file)]
         else:
-            return os.path.exists(path + file)
+            single = dir_path / file
+            if single.exists() and single.is_file():
+                attachments = [single]
+
+        for att in attachments:
+            logger.writeLog(f"                 Preparing File: {att}")
+
+    # Strategy 1: Standard SMTP (ideal for Docker, Linux, macOS, and modern servers)
+    smtp_host = os.environ.get("SMTP_HOST")
+    if smtp_host:
+        try:
+            smtp_port = int(os.environ.get("SMTP_PORT", 25))
+            smtp_user = os.environ.get("SMTP_USER", "")
+            smtp_pass = os.environ.get("SMTP_PASSWORD", "")
+            smtp_from = os.environ.get("SMTP_FROM", smtp_user or "sl2util@automation.local")
+
+            msg = MIMEMultipart("mixed")
+            msg["Subject"] = subject
+            msg["From"] = smtp_from
+            msg["To"] = to_address
+            if cc_address:
+                msg["Cc"] = cc_address
+
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+            for att in attachments:
+                with open(att, "rb") as af:
+                    part = MIMEApplication(af.read(), Name=att.name)
+                    part["Content-Disposition"] = f'attachment; filename="{att.name}"'
+                    msg.attach(part)
+
+            recipients = [addr.strip() for addr in to_address.split(";") if addr.strip()]
+            if cc_address:
+                recipients += [addr.strip() for addr in cc_address.split(";") if addr.strip()]
+
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                if os.environ.get("SMTP_TLS", "").lower() in ("1", "true", "yes"):
+                    server.starttls()
+                if smtp_user and smtp_pass:
+                    server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, recipients, msg.as_string())
+
+            logger.writeLog("            Mail Sent via SMTP!")
+            return True
+        except Exception as e:
+            logger.writeLog(f"            ---html_mailer (SMTP)--- Error: {e}")
+
+    # Strategy 2: Windows Outlook COM Automation (fallback if on Windows)
+    if _WIN32_AVAILABLE:
+        try:
+            outlook = win32.Dispatch("outlook.application")
+            mail = outlook.CreateItem(0)
+            if to_address:
+                mail.To = to_address
+            if cc_address:
+                mail.CC = cc_address
+            mail.Subject = subject
+            mail.HTMLBody = html_body
+
+            for att in attachments:
+                mail.Attachments.Add(str(att.resolve()))
+
+            mail.Send()
+            logger.writeLog("            Mail Sent via Outlook COM!")
+            return True
+        except Exception as e:
+            logger.writeLog(f"            ---html_mailer (Outlook)--- Error: {e}")
+            return False
+
+    logger.writeLog("            ---html_mailer--- Neither SMTP nor Windows Outlook available. Mail logged.")
     return False
 
 
-def path_exists(path):
-    return os.path.exists(path)
+def mail_test(subject: str, to: str) -> bool:
+    """Send a simple test email."""
+    return html_mailer(subject=subject, body="<h2>HTML Message body</h2>", to_address=to)
 
 
-def clean_dir(path):
-    try:
-        for fileName in os.listdir(path):
-            os.remove(path + fileName)
-        return True
-    except:
-        loader.logger.writeLog("            ---clean_dir--- Unexpected error: " + str(sys.exc_info()[0]))
-        return False
-
-
-def copy_file(file, from_path, to_path):
-    try:
-        shutil.copy2(from_path + file, to_path)
-        return True
-    except:
-        loader.logger.writeLog("            ---copy_file--- Unexpected error: " + str(sys.exc_info()[0]))
-        return False
-
-
-def clean_old_files(file, path, old_days):
-    # old_days = 30.0 '*.pdf'
-    fKeepSeconds = old_days * 86400
-    loader.logger.writeLog("        Delete files older than %3.0f days" % old_days)
-    # sPath = path # 'C:/ReportTracker/BitacoraReportes/Server/Reports/'
-    for fileName in os.listdir(path):
-        fileStats = os.stat(path + fileName)
-        lSize = fileStats.st_size
-        tCreationTime = time.ctime(fileStats.st_mtime)
-        tCreated = time.strptime(tCreationTime, "%a %b %d %H:%M:%S %Y")
-        sNow = time.strftime("%a %b %d %H:%M:%S %Y", time.localtime())
-        tNow = time.strptime(sNow, "%a %b %d %H:%M:%S %Y")
-        fOld = time.mktime(tNow) - time.mktime(tCreated)
-        if fnmatch.fnmatch(fileName, file) and fOld > fKeepSeconds:
-            print('   File: ' + fileName)
-            print('   Size: ' + str(lSize) + " bytes")
-            print('Created: ' + tCreationTime)  # string Thu Sep 27 16:19:41 2012  %a %b %d %H:%M:%S %Y
-            print('   Life: %5.2f days old' % (fOld / 86400))
-            return delete_file(fileName, path)
-    return True
-
-
-def map_network_drive(drive, host, path, user=None, password=None):
-    networkPath = "\\\\" + host + path
-    cmd_path = "net use " + drive + " " + networkPath + " /PERSISTENT:NO"
-    if user is not None and password is not None:
-        cmd_path = "net use " + drive + " " + networkPath + "/USER:" + user + " " + password + " /PERSISTENT:NO"
-    result = False
-    response = os.system("ping -n 1 " + host)
-    if response == 0:
-        print(host + ' is up!')
+def text_decorator(
+    text: str,
+    date: datetime.date,
+    shift: int | str,
+    heat: Any,
+    tmt: Any,
+    sequence: Any,
+    in_seq: Any,
+) -> str:
+    """
+    Format steelmaking heat and production tracking tokens in a template string.
+    Supported placeholders:
+      %day, %ddd, %dd, %mmm, %month, %mm, %yyyy
+      %dws, %dwe, %mws, %mwe, %yws, %ywe (Week start/end dates)
+      %WW, %UU (Week of year)
+      %Heat, %Tmt, %InSeq, %Seq, %Shift, %hift
+    """
+    day_of_week = int(date.strftime("%w"))
+    if day_of_week < 1:
+        delta_fwd = 1
+        delta_bak = 6
     else:
-        print(host + ' is down!')
-    if path_exists(drive + '\\'):
-        print(drive + " Drive in use...")
-        result = True
+        delta_fwd = 8 - day_of_week
+        delta_bak = day_of_week - 1
+
+    week_num = int(date.strftime("%U"))
+    week_of_year = f"{week_num:02d}"
+
+    start_of_week = date - timedelta(days=delta_bak)
+    end_of_week = date + timedelta(days=delta_fwd)
+
+    # Steelmaking Shift mapping: 21->A, 22->B, 23->C
+    shift_code = str(shift)
+    if shift_code in ("21", "A", "a"):
+        shift_str = "A"
+    elif shift_code in ("22", "B", "b"):
+        shift_str = "B"
+    elif shift_code in ("23", "C", "c"):
+        shift_str = "C"
     else:
-        print(drive + "\\ is Offline, Try to mapnetwork...")
-        if path_exists(networkPath):
-            print(networkPath + " is found...")
-            print("Trying to map " + networkPath + " on to " + drive + " .....")
-            try:
-                os.system(cmd_path)
-                result = True
-            except:
-                print("Unexpected error when mapping Drive...")
-        else:
-            print(networkPath + " not found...")
-            print("Trying to map anyway " + networkPath + " on to " + drive + " .....")
-            try:
-                os.system(cmd_path)
-                result = True
-            except:
-                print("Unexpected error when mapping Drive anyway...")
+        shift_str = shift_code
+
+    heat_str = str(heat)
+    tmt_str = str(tmt)
+    sequence_str = str(sequence)
+
+    if in_seq is not None:
+        try:
+            in_seq_str = f"{int(in_seq):02d}"
+        except (ValueError, TypeError):
+            in_seq_str = str(in_seq)
+    else:
+        in_seq_str = "00"
+
+    replacements = {
+        "%day": date.strftime("%A"),
+        "%ddd": date.strftime("%a"),
+        "%dd": date.strftime("%d"),
+        "%mmm": date.strftime("%b"),
+        "%month": date.strftime("%B"),
+        "%mm": date.strftime("%m"),
+        "%yyyy": date.strftime("%Y"),
+        "%dws": start_of_week.strftime("%d"),
+        "%dwe": end_of_week.strftime("%d"),
+        "%mws": start_of_week.strftime("%m"),
+        "%mwe": end_of_week.strftime("%m"),
+        "%yws": start_of_week.strftime("%Y"),
+        "%ywe": end_of_week.strftime("%Y"),
+        "%WW": week_of_year,
+        "%UU": week_of_year,
+        "%Heat": heat_str,
+        "%Tmt": tmt_str,
+        "%InSeq": in_seq_str,
+        "%Seq": sequence_str,
+        "%Shift": shift_str,
+        "%hift": shift_str,
+    }
+
+    result = text
+    for token, val in replacements.items():
+        result = result.replace(token, val)
+
     return result
 
 
-def file_append(line, path, file):
-    f = open(path + file, 'a')
-    f.write(line)
-    print(' ' + line)
-    f.write("\n")
-    f.close()
-
-
-def file_empty(path, file):
-    f = open(path + file, 'w')
-    f.write("")
-    print(' Clear file ' + file)
-    f.close()
-
-
-def ftp_upload_file(path, file, ftp_server, ftp_user, ftp_password, ftp_root):
+def zipper(file: str | Path, path: str | Path, zippath: str | Path) -> bool:
+    """
+    Archive a file into a zip archive using Python's standard zipfile library.
+    Cross-platform replacement for legacy 7z execution.
+    """
     try:
-        ftp = FTP(ftp_server)
-        ftp.login(user=ftp_user, passwd=ftp_password, acct='')
-        ftp.cwd(ftp_root)
-        local_file = path + file
-        fp = open(local_file, 'rb')
-        ftp.storbinary('STOR %s' % os.path.basename(local_file), fp, 1024)
-        print(' Uploading file ' + file)
-        fp.close()
-        print(' FTP File Uploaded: ' + file + '@' + ftp_server + ftp_root)
-    except:
-        loader.logger.writeLog(' FTP Error Uploading file, cant connect: ' + file + '@' + ftp_server + ftp_root)
+        file_name = str(file)
+        stem = Path(file_name).stem
+        zipfile_name = f"{stem}.zip"
+        return zipper2(file_name, path, zipfile_name, zippath)
+    except Exception as e:
+        logger.writeLog(f"            ---zipper--- Unexpected error: {e}")
+        return False
+
+
+def zipper2(
+    file: str | Path,
+    path: str | Path,
+    zipfile_name: str | Path,
+    zippath: str | Path,
+) -> bool:
+    """
+    Compress a file into a zip archive placed at zippath.
+    Pure-Python implementation working seamlessly across Linux, macOS, Windows, and Docker.
+    """
+    try:
+        src = Path(path) / file
+        dest_dir = Path(zippath)
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_zip = dest_dir / zipfile_name
+
+        if not src.exists():
+            logger.writeLog(f"zipper2: source file does not exist: {src}")
+            return False
+
+        with zipfile.ZipFile(dest_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.write(src, arcname=Path(file).name)
+
+        return True
+    except Exception as e:
+        logger.writeLog(f"            ---zipper2--- Unexpected error: {e}")
+        return False
+
+
+def xls_to_pdf_publisher(
+    xls_file: str | Path,
+    pdf_file: str | Path,
+    sent_to_print: int,
+    script_path: str,
+    pause: float,
+) -> int:
+    """
+    Convert an Excel file to PDF and optionally print.
+    Windows-specific functionality with safe fallback on non-Windows hosts.
+    """
+    xls_path = Path(xls_file)
+    if not xls_path.exists():
+        logger.writeLog(f"File Not found: {xls_file}")
+        return 4
+
+    logger.writeLog(f"File found: {xls_file}")
+    logger.writeLog(f"Try to save to: {pdf_file}")
+
+    if sys.platform != "win32":
+        logger.writeLog("xls_to_pdf_publisher: printing/COM is only supported on Windows host.")
+        return 1
+
+    try:
+        subprocess.call(f'cmd /c "{script_path}" "{xls_file}"', shell=True)
+        if sent_to_print == 1:
+            if hasattr(os, "startfile"):
+                os.startfile(str(pdf_file), "print")
+            logger.writeLog("                       Waiting to Printer....")
+            time.sleep(pause)
+            subprocess.run("taskkill /im AcroRd32.exe /f", shell=True, capture_output=True)
+        return 1
+    except Exception as e:
+        logger.writeLog(f"            ---xls_to_pdf_publisher--- Unexpected error: {e}")
+        return 4
+
+
+def run_win_cmd(cmd: str) -> bool:
+    """Execute a system shell command safely using subprocess."""
+    try:
+        proc = subprocess.run(str(cmd), shell=True, capture_output=True, text=True)
+        return proc.returncode == 0
+    except Exception as e:
+        logger.writeLog(f"            ---run_win_cmd--- Unexpected error: {e}")
+        return False
+
+
+def delete_file(file: str | Path, path: str | Path) -> bool:
+    """Delete a file from the specified path."""
+    try:
+        target = Path(path) / file
+        if target.exists():
+            target.unlink()
+            logger.writeLog(f"               Deleting.... {target}")
+        return True
+    except Exception as e:
+        logger.writeLog(f"            ---deleteFile--- Unexpected error: {e}")
+        return False
+
+
+def files_exists(file: str, path: str | Path) -> bool:
+    """Check if file or files matching a glob pattern exist in directory."""
+    target_dir = Path(path)
+    if not target_dir.exists():
+        return False
+
+    if "*" in file:
+        return any(fnmatch.fnmatch(p.name, file) for p in target_dir.iterdir() if p.is_file())
+    return (target_dir / file).exists()
+
+
+def path_exists(path: str | Path) -> bool:
+    """Check if path exists."""
+    return Path(path).exists()
+
+
+def clean_dir(path: str | Path) -> bool:
+    """Delete all files within a directory."""
+    try:
+        target_dir = Path(path)
+        if target_dir.exists():
+            for p in target_dir.iterdir():
+                if p.is_file():
+                    p.unlink()
+        return True
+    except Exception as e:
+        logger.writeLog(f"            ---clean_dir--- Unexpected error: {e}")
+        return False
+
+
+def copy_file(file: str | Path, from_path: str | Path, to_path: str | Path) -> bool:
+    """Copy a file from one directory to another."""
+    try:
+        src = Path(from_path) / file
+        dest = Path(to_path)
+        dest.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        return True
+    except Exception as e:
+        logger.writeLog(f"            ---copy_file--- Unexpected error: {e}")
+        return False
+
+
+def clean_old_files(file: str, path: str | Path, old_days: float) -> bool:
+    """Delete files matching pattern in path that are older than old_days."""
+    target_dir = Path(path)
+    if not target_dir.exists():
+        return True
+
+    keep_seconds = float(old_days) * 86400.0
+    now = time.time()
+    logger.writeLog(f"        Delete files older than {old_days:3.0f} days")
+
+    for p in target_dir.iterdir():
+        if not p.is_file():
+            continue
+        if fnmatch.fnmatch(p.name, file):
+            age_seconds = now - p.stat().st_mtime
+            if age_seconds > keep_seconds:
+                try:
+                    p.unlink()
+                    logger.writeLog(f"               Deleting old file.... {p}")
+                except Exception as e:
+                    logger.writeLog(f"clean_old_files: could not delete {p}: {e}")
+    return True
+
+
+def map_network_drive(
+    drive: str,
+    host: str,
+    path: str,
+    user: str | None = None,
+    password: str | None = None,
+) -> bool:
+    """
+    Map a network share to a drive letter on Windows, or verify network path.
+    """
+    if sys.platform != "win32":
+        network_path = f"//{host}/{path.lstrip('/')}"
+        return Path(network_path).exists()
+
+    network_path = f"\\\\{host}{path}"
+    if user and password:
+        cmd = f'net use {drive} {network_path} /USER:{user} {password} /PERSISTENT:NO'
+    else:
+        cmd = f'net use {drive} {network_path} /PERSISTENT:NO'
+
+    try:
+        proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        return proc.returncode == 0
+    except Exception:
+        return False
+
+
+def file_append(line: str, path: str | Path, file: str | Path) -> None:
+    """Append a line to a file."""
+    target = Path(path) / file
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with open(target, "a", encoding="utf-8") as f:
+        f.write(line + "\n")
+
+
+def file_empty(path: str | Path, file: str | Path) -> None:
+    """Truncate or create an empty file."""
+    target = Path(path) / file
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with open(target, "w", encoding="utf-8") as f:
+        f.write("")
+
+
+def ftp_upload_file(
+    path: str | Path,
+    file: str | Path,
+    ftp_server: str,
+    ftp_user: str,
+    ftp_password: str,
+    ftp_root: str,
+) -> bool:
+    """Upload a local file to an FTP server."""
+    from ftplib import FTP
+
+    local_file = Path(path) / file
+    if not local_file.exists():
+        logger.writeLog(f"FTP Error: local file not found: {local_file}")
+        return False
+
+    try:
+        with FTP(ftp_server) as ftp:
+            ftp.login(user=ftp_user, passwd=ftp_password)
+            ftp.cwd(ftp_root)
+            with open(local_file, "rb") as fp:
+                ftp.storbinary(f"STOR {local_file.name}", fp, 1024)
+            logger.writeLog(f" FTP File Uploaded: {file}@{ftp_server}{ftp_root}")
+            return True
+    except Exception as e:
+        logger.writeLog(f" FTP Error Uploading file: {file}@{ftp_server}{ftp_root} ({e})")
+        return False

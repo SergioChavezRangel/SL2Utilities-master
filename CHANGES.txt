@@ -1,4 +1,6 @@
+v2.0.0, 2026.10.20 -- Modernization release: pyproject.toml (PEP 621), python-oracledb Thin mode, built-in zipfile, SMTP cross-platform mailer, multi-stage Docker container & compose, automated pytest suite, GitHub Actions CI.
+v1.2.3, 2020.11.14 -- Watchdog handler added for services.
 v1.0.5, 2020.10.14 -- Level1 Handler added (OPC-UA connection).
-v1.0.2, 2020.10.07 -- Misc utils added (mailing, text parser).
+v1.0.3, 2020.10.07 -- Misc utils added (mailing, text parser).
 v1.0.1, 2020.10.06 -- DataBase Handler added.
 v1.0.0, 2020.10.05 -- Initial release.

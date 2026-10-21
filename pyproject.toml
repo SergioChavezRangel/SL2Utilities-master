@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sl2util"
+version = "2.0.0"
+description = "Steelmaking Level 2 Automation Utilities - Modernized Cross-Platform Suite"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Sergio Chavez Rangel", email = "l2.steel.automation@gmail.com" }
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Monitoring",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+dependencies = [
+    "cryptography>=41.0.0",
+    "python-dateutil>=2.8.2",
+    "oracledb>=2.0.0",
+]
+
+[project.optional-dependencies]
+mssql = [
+    "pyodbc>=4.0.35",
+]
+opcua = [
+    "asyncua>=1.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+all = [
+    "pyodbc>=4.0.35",
+    "asyncua>=1.0.0",
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+sl2util-watchdog = "sl2util.watchdog:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sl2util*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "UP", "I"]
+ignore = ["E501"]
+
